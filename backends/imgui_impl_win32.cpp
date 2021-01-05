@@ -139,7 +139,48 @@ bool    ImGui_ImplWin32_Init(void* hwnd)
     io.KeyMap[ImGuiKey_Space] = VK_SPACE;
     io.KeyMap[ImGuiKey_Enter] = VK_RETURN;
     io.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
-    io.KeyMap[ImGuiKey_KeyPadEnter] = VK_RETURN;
+    io.KeyMap[ImGuiKey_Apostrophe] = VK_OEM_7; // '
+    io.KeyMap[ImGuiKey_Comma] = VK_OEM_COMMA; // ,
+    io.KeyMap[ImGuiKey_Minus] = VK_OEM_MINUS; // -
+    io.KeyMap[ImGuiKey_Period] = VK_OEM_PERIOD; // .
+    io.KeyMap[ImGuiKey_Slash] = VK_OEM_2; // /
+    io.KeyMap[ImGuiKey_Semicolon] = VK_OEM_1; // ;
+    io.KeyMap[ImGuiKey_Equal] = VK_OEM_PLUS; // =
+    io.KeyMap[ImGuiKey_LeftBracket] = VK_OEM_4; // [
+    io.KeyMap[ImGuiKey_Backslash] = VK_OEM_5; // \ (this text inhibit multiline comment caused by backlash)
+    io.KeyMap[ImGuiKey_RightBracket] = VK_OEM_6; // ]
+    io.KeyMap[ImGuiKey_GraveAccent] = VK_OEM_3; // `
+    io.KeyMap[ImGuiKey_CapsLock] = VK_CAPITAL;
+    io.KeyMap[ImGuiKey_ScrollLock] = VK_SCROLL;
+    io.KeyMap[ImGuiKey_NumLock] = VK_NUMLOCK;
+    io.KeyMap[ImGuiKey_PrintScreen] = VK_SNAPSHOT;
+    io.KeyMap[ImGuiKey_Pause] = VK_PAUSE;
+    io.KeyMap[ImGuiKey_KeyPad0] = VK_NUMPAD0;
+    io.KeyMap[ImGuiKey_KeyPad1] = VK_NUMPAD1;
+    io.KeyMap[ImGuiKey_KeyPad2] = VK_NUMPAD2;
+    io.KeyMap[ImGuiKey_KeyPad3] = VK_NUMPAD3;
+    io.KeyMap[ImGuiKey_KeyPad4] = VK_NUMPAD4;
+    io.KeyMap[ImGuiKey_KeyPad5] = VK_NUMPAD5;
+    io.KeyMap[ImGuiKey_KeyPad6] = VK_NUMPAD6;
+    io.KeyMap[ImGuiKey_KeyPad7] = VK_NUMPAD7;
+    io.KeyMap[ImGuiKey_KeyPad8] = VK_NUMPAD8;
+    io.KeyMap[ImGuiKey_KeyPad9] = VK_NUMPAD9;
+    io.KeyMap[ImGuiKey_KeyPadDecimal] = VK_DECIMAL;
+    io.KeyMap[ImGuiKey_KeyPadDivide] = VK_DIVIDE;
+    io.KeyMap[ImGuiKey_KeyPadMultiply] = VK_MULTIPLY;
+    io.KeyMap[ImGuiKey_KeyPadSubtract] = VK_SUBTRACT;
+    io.KeyMap[ImGuiKey_KeyPadAdd] = VK_ADD;
+    io.KeyMap[ImGuiKey_KeyPadEnter] = 0;
+    io.KeyMap[ImGuiKey_KeyPadEqual] = 256 + VK_RETURN; // need extra logic in WM_KEYxxx
+    io.KeyMap[ImGuiKey_LeftShift] = VK_LSHIFT;
+    io.KeyMap[ImGuiKey_LeftControl] = VK_LCONTROL;
+    io.KeyMap[ImGuiKey_LeftAlt] = VK_LMENU;
+    io.KeyMap[ImGuiKey_LeftSuper] = VK_LWIN;
+    io.KeyMap[ImGuiKey_RightShift] = VK_RSHIFT;
+    io.KeyMap[ImGuiKey_RightControl] = VK_RCONTROL;
+    io.KeyMap[ImGuiKey_RightAlt] = VK_RMENU;
+    io.KeyMap[ImGuiKey_RightSuper] = VK_RWIN;
+    io.KeyMap[ImGuiKey_Menu] = VK_APPS;
     io.KeyMap[ImGuiKey_0] = '0';
     io.KeyMap[ImGuiKey_1] = '1';
     io.KeyMap[ImGuiKey_2] = '2';
@@ -463,18 +504,35 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
     case WM_KEYUP:
     case WM_SYSKEYDOWN:
     case WM_SYSKEYUP:
-    {
-        bool down = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
         if (wParam < 256)
-            io.KeysDown[wParam] = down;
-        if (wParam == VK_CONTROL)
-            io.KeyCtrl = down;
-        if (wParam == VK_SHIFT)
-            io.KeyShift = down;
-        if (wParam == VK_MENU)
-            io.KeyAlt = down;
+        {
+            bool down = (msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN);
+            if (wParam == VK_SHIFT)
+            {
+                io.KeysDown[VK_LSHIFT] = ((::GetKeyState(VK_LSHIFT) & 0x8000) != 0);
+                io.KeysDown[VK_RSHIFT] = ((::GetKeyState(VK_RSHIFT) & 0x8000) != 0);
+                io.KeyShift            = io.KeysDown[VK_LSHIFT] || io.KeysDown[VK_RSHIFT];
+            }
+            else if (wParam == VK_CONTROL)
+            {
+                io.KeysDown[VK_LCONTROL] = ((::GetKeyState(VK_LCONTROL) & 0x8000) != 0);
+                io.KeysDown[VK_RCONTROL] = ((::GetKeyState(VK_RCONTROL) & 0x8000) != 0);
+                io.KeyCtrl               = io.KeysDown[VK_LCONTROL] || io.KeysDown[VK_RCONTROL];
+            }
+            else if (wParam == VK_MENU)
+            {
+                io.KeysDown[VK_LMENU] = ((::GetKeyState(VK_LMENU) & 0x8000) != 0);
+                io.KeysDown[VK_RMENU] = ((::GetKeyState(VK_RMENU) & 0x8000) != 0);
+                io.KeyAlt             = io.KeysDown[VK_LMENU] || io.KeysDown[VK_RMENU];
+            }
+
+            // VK_RETURN extended keys is to upper region
+            if ((wParam == VK_RETURN) && (HIWORD(lParam) & KF_EXTENDED))
+                io.KeysDown[256 + wParam] = down;
+            else
+                io.KeysDown[wParam] = down;
+        }
         return 0;
-    }
     case WM_SETFOCUS:
     case WM_KILLFOCUS:
         io.AddFocusEvent(msg == WM_SETFOCUS);
