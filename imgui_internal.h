@@ -2125,11 +2125,42 @@ struct IMGUI_API ImGuiWindowTempData
 
     // Local parameters stacks
     // We store the current settings outside of the vectors to increase memory locality (reduce cache misses). The vectors are rarely modified. Also it allows us to not heap allocate for short-lived windows which are not using those settings.
+    ImGuiItemFlags          ItemFlags;              // == ItemFlagsStack.back() [empty == ImGuiItemFlags_Default]
     float                   ItemWidth;              // Current item width (>0.0: width in pixels, <0.0: align xx pixels to the right of window).
     float                   TextWrapPos;            // Current text wrap pos.
     ImVector<float>         ItemWidthStack;         // Store item widths to restore (attention: .back() is not == ItemWidth)
     ImVector<float>         TextWrapPosStack;       // Store text wrap pos to restore (attention: .back() is not == TextWrapPos)
     ImGuiStackSizes         StackSizesOnBegin;      // Store size of various stacks for asserting
+
+    ImGuiWindowTempData()
+    {
+        CursorPos = CursorPosPrevLine = CursorStartPos = CursorMaxPos = ImVec2(0.0f, 0.0f);
+        CurrLineSize = PrevLineSize = ImVec2(0.0f, 0.0f);
+        CurrLineTextBaseOffset = PrevLineTextBaseOffset = 0.0f;
+        Indent = ImVec1(0.0f);
+        ColumnsOffset = ImVec1(0.0f);
+        GroupOffset = ImVec1(0.0f);
+
+        NavLayerCurrent = ImGuiNavLayer_Main;
+
+        NavFocusScopeIdCurrent = 0;
+        NavHideHighlightOneFrame = false;
+        NavHasScroll = false;
+
+        MenuBarAppending = false;
+        MenuBarOffset = ImVec2(0.0f, 0.0f);
+        TreeDepth = 0;
+        TreeJumpToParentOnPopMask = 0x00;
+        StateStorage = NULL;
+        CurrentColumns = NULL;
+        LayoutType = ParentLayoutType = ImGuiLayoutType_Vertical;
+        CurrentLayout = NULL;
+        CurrentLayoutItem = NULL;
+        FocusCounterRegular = FocusCounterTabStop = -1;
+
+        ItemWidth = 0.0f;
+        TextWrapPos = -1.0f;
+    }
 };
 
 // Storage for one window
